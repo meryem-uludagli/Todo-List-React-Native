@@ -1,3 +1,4 @@
+import {useEffect, useState} from 'react';
 import {
   FlatList,
   SafeAreaView,
@@ -8,9 +9,16 @@ import {
   View,
   Alert,
 } from 'react-native';
-import React, {useEffect, useState} from 'react';
 import uuid from 'react-native-uuid';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import LinearGradient from 'react-native-linear-gradient';
+import {
+  AddCircle,
+  CloseCircle,
+  TickCircle,
+  Trash,
+  Edit2,
+} from 'iconsax-react-native';
 
 const TodoScreen = () => {
   const [todo, setTodo] = useState('');
@@ -22,7 +30,6 @@ const TodoScreen = () => {
       console.log(error);
     }
   };
-
   const loadTodos = async () => {
     try {
       const storedData = await AsyncStorage.getItem('todos');
@@ -40,12 +47,22 @@ const TodoScreen = () => {
     saveTodos(updatedTodos);
   };
 
+  const completeTodo = async id => {
+    const updatedTodos = todos.map(item =>
+      item.id === id ? {...item, completed: !item.completed} : item,
+    );
+    setTodos(updatedTodos);
+    saveTodos(updatedTodos);
+  };
+
   const updateTodos = id => {
     const exitingTodo = todos?.find(item => item.id === id);
     if (!exitingTodo) return;
+
     Alert.prompt(
       'Edit Todo',
       'Update',
+
       newUpdateText => {
         if (newUpdateText) {
           const updateTodos = todos.map(item =>
@@ -63,17 +80,17 @@ const TodoScreen = () => {
   useEffect(() => {
     loadTodos();
   }, []);
-
   const addTodo = () => {
     const updatedTodos = [...todos, {id: uuid.v4(), text: todo}];
     setTodos(updatedTodos);
     saveTodos(updatedTodos);
+    setTodo('');
   };
 
   return (
-    <View style={styles.container}>
+    <LinearGradient colors={['#EDE8DC', '#FFB0B0']} style={styles.container}>
       <SafeAreaView>
-        <Text style={styles.headerText}>React Native Async Storage</Text>
+        <Text style={styles.headerText}>TO-DO LIST</Text>
         <View style={styles.inputContainer}>
           <TextInput
             onChangeText={text => setTodo(text)}
@@ -83,7 +100,7 @@ const TodoScreen = () => {
           <TouchableOpacity
             onPress={addTodo}
             style={[styles.button, styles.addButton]}>
-            <Text style={styles.buttonText}>Add</Text>
+            <AddCircle size="32" color="#ff8a65" variant="Broken" />
           </TouchableOpacity>
         </View>
 
@@ -92,13 +109,40 @@ const TodoScreen = () => {
           keyExtractor={item => item?.id?.toString()}
           renderItem={({item}) => (
             <View style={styles.todoItem}>
-              <Text style={{color: '#00000'}}>{item?.text}</Text>
+              <Text
+                style={[
+                  styles.todoText,
+                  item.completed && styles.completedText,
+                ]}>
+                {item?.text}
+              </Text>
+
               <View style={{flexDirection: 'row'}}>
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity
+                    onPress={() => completeTodo(item?.id)}
+                    style={[styles.button, styles.completeButton]}>
+                    <Text style={styles.buttonText}>
+                      {item.completed ? (
+                        <CloseCircle size="24" color="#000" variant="Broken" />
+                      ) : (
+                        <TickCircle
+                          size="27"
+                          color="#ff8a65"
+                          variant="Broken"
+                        />
+                      )}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
                 <View style={styles.buttonContainer}>
                   <TouchableOpacity
                     onPress={() => deleteTodo(item?.id)}
                     style={[styles.button, styles.deleteButton]}>
-                    <Text style={styles.buttonText}>Delete</Text>
+                    <Text style={styles.buttonText}>
+                      <Trash size="27" color="#ff8a65" variant="Broken" />
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
@@ -106,7 +150,9 @@ const TodoScreen = () => {
                   <TouchableOpacity
                     onPress={() => updateTodos(item?.id)}
                     style={[styles.button, styles.updateButton]}>
-                    <Text style={styles.buttonText}>Update</Text>
+                    <Text style={styles.buttonText}>
+                      <Edit2 size="27" color="#ff8a65" variant="Broken" />
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -114,7 +160,7 @@ const TodoScreen = () => {
           )}
         />
       </SafeAreaView>
-    </View>
+    </LinearGradient>
   );
 };
 
@@ -140,6 +186,7 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 10,
     borderColor: 'gray',
+    flex: 1,
   },
   button: {
     marginLeft: 10,
@@ -149,10 +196,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 8,
-    backgroundColor: 'blue',
   },
   buttonText: {
-    color: 'white',
+    color: 'gray',
   },
   buttonContainer: {},
   todoItem: {
@@ -160,12 +206,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: 15,
   },
+  todoText: {
+    color: '#000',
+    textDecorationLine: 'none',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  completedText: {
+    textDecorationLine: 'line-through',
+    color: 'gray',
+    fontSize: 15,
+  },
+  completeButton: {
+    padding: 10,
+  },
   deleteButton: {
     padding: 10,
-    backgroundColor: 'red',
   },
   updateButton: {
-    backgroundColor: 'green',
     padding: 10,
   },
 });
